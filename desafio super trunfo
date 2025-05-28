@@ -1,0 +1,154 @@
+#include <stdio.h>    // Inclui funções de entrada/saída, como printf e scanf
+#include <string.h>   // Inclui funções para lidar com strings (como strcmp)
+#include <locale.h>   // Permite usar acentos e caracteres especiais (configurações regionais)
+
+#define MAX_CIDADES 32  // Define uma constante: número máximo de cartas/cidades
+
+// ==== Estrutura de uma carta ====
+typedef struct {
+    char codigo[4];               // Código da carta (ex: A01, B03)
+    int populacao;                // População da cidade
+    float area;                   // Área em km²
+    float pib;                    // PIB em bilhões
+    int pontos_turisticos;       // Quantidade de pontos turísticos
+
+    float densidade_populacional; // População / Área
+    float pib_per_capita;         // PIB / População
+    float super_poder;            // Soma de todas as propriedades
+} Cidade;
+
+// ==== Funções matemáticas auxiliares ====
+float calcularDensidade(int populacao, float area) {
+    return (area > 0) ? populacao / area : 0;  // Evita divisão por zero
+}
+
+float calcularPIBPerCapita(float pib, int populacao) {
+    return (populacao > 0) ? pib / populacao : 0;  // Evita divisão por zero
+}
+
+float calcularSuperPoder(Cidade c) {
+    // Soma todas as propriedades para gerar um "super poder"
+    return c.populacao + c.area + c.pib + c.pontos_turisticos +
+           c.densidade_populacional + c.pib_per_capita;
+}
+
+// ==== Cadastro de cidades ====
+void cadastrarCidades(Cidade cidades[], int total) {
+    for (int i = 0; i < total; i++) {
+        printf("\n--- Cidade %d de %d ---\n", i + 1, total);
+
+        printf("Código da carta (ex: A01): ");
+        scanf(" %3s", cidades[i].codigo);  // Lê string (máx 3 caracteres + \0)
+
+        printf("População: ");
+        scanf("%d", &cidades[i].populacao);
+
+        printf("Área (km²): ");
+        scanf("%f", &cidades[i].area);
+
+        printf("PIB (bilhões): ");
+        scanf("%f", &cidades[i].pib);
+
+        printf("Pontos turísticos: ");
+        scanf("%d", &cidades[i].pontos_turisticos);
+
+        // Calcula propriedades derivadas
+        cidades[i].densidade_populacional = calcularDensidade(cidades[i].populacao, cidades[i].area);
+        cidades[i].pib_per_capita = calcularPIBPerCapita(cidades[i].pib, cidades[i].populacao);
+        cidades[i].super_poder = calcularSuperPoder(cidades[i]);
+    }
+}
+
+// ==== Exibir os dados de uma carta ====
+void exibirCidade(Cidade c) {
+    printf("\n--- Carta %s ---\n", c.codigo);
+    printf("População: %d\n", c.populacao);
+    printf("Área: %.2f km²\n", c.area);
+    printf("PIB: %.2f bilhões\n", c.pib);
+    printf("Pontos turísticos: %d\n", c.pontos_turisticos);
+    printf("Densidade populacional: %.2f hab/km²\n", c.densidade_populacional);
+    printf("PIB per capita: %.6f bilhões/hab\n", c.pib_per_capita);
+    printf("Super Poder: %.2f\n", c.super_poder);
+}
+
+// Exibe todas as cartas cadastradas
+void exibirTodasCidades(Cidade cidades[], int total) {
+    printf("\n=== Cartas Cadastradas ===\n");
+    for (int i = 0; i < total; i++) {
+        exibirCidade(cidades[i]);
+    }
+}
+
+// ==== Busca uma carta pelo código ====
+Cidade* buscarCarta(Cidade cidades[], int total, char codigo[]) {
+    for (int i = 0; i < total; i++) {
+        if (strcmp(cidades[i].codigo, codigo) == 0) {  // strcmp compara strings
+            return &cidades[i];  // Retorna ponteiro para a carta
+        }
+    }
+    return NULL;  // Carta não encontrada
+}
+
+// ==== Função que mostra o vencedor por propriedade ====
+void exibirVencedor(char *propriedade, float val1, float val2, char *codigo1, char *codigo2, int menorVence) {
+    printf("%s: %.2f vs %.2f -> ", propriedade, val1, val2);
+    if (val1 == val2) {
+        printf("Empate\n");
+    } else if ((menorVence && val1 < val2) || (!menorVence && val1 > val2)) {
+        printf("%s vence\n", codigo1);
+    } else {
+        printf("%s vence\n", codigo2);
+    }
+}
+
+// ==== Comparação completa entre duas cartas ====
+void compararCartas(Cidade *c1, Cidade *c2) {
+    printf("\n=== Comparação entre %s e %s ===\n", c1->codigo, c2->codigo);
+
+    exibirVencedor("População", c1->populacao, c2->populacao, c1->codigo, c2->codigo, 0);
+    exibirVencedor("Área", c1->area, c2->area, c1->codigo, c2->codigo, 0);
+    exibirVencedor("PIB", c1->pib, c2->pib, c1->codigo, c2->codigo, 0);
+    exibirVencedor("Pontos Turísticos", c1->pontos_turisticos, c2->pontos_turisticos, c1->codigo, c2->codigo, 0);
+    exibirVencedor("Densidade Populacional", c1->densidade_populacional, c2->densidade_populacional, c1->codigo, c2->codigo, 1); // menor vence
+    exibirVencedor("PIB per capita", c1->pib_per_capita, c2->pib_per_capita, c1->codigo, c2->codigo, 0);
+    exibirVencedor("Super Poder", c1->super_poder, c2->super_poder, c1->codigo, c2->codigo, 0);
+}
+
+// ==== Função principal ====
+int main() {
+    setlocale(LC_ALL, "");  // Ativa suporte a acentos e caracteres especiais
+
+    Cidade cidades[MAX_CIDADES];  // Cria array de cartas
+    int total;
+
+    printf("Quantas cartas deseja cadastrar? (máx %d): ", MAX_CIDADES);
+    scanf("%d", &total);
+
+    if (total < 2 || total > MAX_CIDADES) {
+        printf("Número inválido. Cadastre pelo menos 2 e no máximo %d cartas.\n", MAX_CIDADES);
+        return 1;  // Termina o programa com erro
+    }
+
+    // Cadastro e exibição
+    cadastrarCidades(cidades, total);
+    exibirTodasCidades(cidades, total);
+
+    // Comparação entre cartas
+    char cod1[4], cod2[4];
+    printf("\nDigite o código da 1ª carta para comparar: ");
+    scanf(" %3s", cod1);
+    printf("Digite o código da 2ª carta para comparar: ");
+    scanf(" %3s", cod2);
+
+    // Busca e comparação
+    Cidade *c1 = buscarCarta(cidades, total, cod1);
+    Cidade *c2 = buscarCarta(cidades, total, cod2);
+
+    if (c1 && c2) {
+        compararCartas(c1, c2);
+    } else {
+        printf("Erro: Uma ou ambas as cartas não foram encontradas.\n");
+    }
+
+    return 0;  // Fim do programa
+}
